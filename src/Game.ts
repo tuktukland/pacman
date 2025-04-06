@@ -1,7 +1,18 @@
+import Maze from './Maze'; // Import the Maze class
+import Renderer from './Renderer'; // Import the Renderer class
+import PacMan from './PacMan'; // Import PacMan class
+
 class Game {
     private canvas: HTMLCanvasElement;
     private ctx: CanvasRenderingContext2D;
-    // Add properties for game state, entities, etc. later
+    private maze: Maze; // Add a maze property
+    private renderer: Renderer; // No definite assignment needed now
+    private pacman: PacMan; // Add PacMan instance property
+    private animationFrameId: number | null = null; // To control the game loop
+
+    // Pac-Man's starting position in the maze grid (adjust if needed)
+    private readonly pacmanStartRow = 23;
+    private readonly pacmanStartCol = 13.5; // Centered horizontally
 
     constructor(canvasId: string) {
         this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
@@ -10,49 +21,51 @@ class Game {
         }
         this.ctx = this.canvas.getContext('2d')!;
 
-        // Set canvas dimensions (adjust later based on Pac-Man maze size)
-        this.canvas.width = 448; // Example dimensions
-        this.canvas.height = 576;
+        this.maze = new Maze(); // Create a new Maze instance
 
-        this.initialize();
-    }
+        // Set canvas dimensions based on maze size
+        this.canvas.width = this.maze.cols * this.maze.tileSize;
+        this.canvas.height = this.maze.rows * this.maze.tileSize;
 
-    private initialize(): void {
+        // Create PacMan instance
+        this.pacman = new PacMan(this.maze, this.pacmanStartRow, this.pacmanStartCol);
+
+        // Create renderer directly
+        this.renderer = new Renderer(this.ctx, this.maze);
         console.log('Game initialized!');
-        // Initial setup logic here (e.g., loading assets, creating entities)
     }
 
     public start(): void {
-        console.log('Starting game loop...');
-        this.gameLoop();
+        if (this.animationFrameId === null) {
+            console.log('Starting game loop...');
+            this.gameLoop();
+        }
+    }
+
+    public stop(): void {
+        if (this.animationFrameId !== null) {
+            cancelAnimationFrame(this.animationFrameId);
+            this.animationFrameId = null;
+            console.log('Game loop stopped.');
+        }
     }
 
     private gameLoop(): void {
-        // Main game loop logic (update, render)
         this.update();
         this.render();
-
-        // Request the next frame
-        requestAnimationFrame(this.gameLoop.bind(this));
+        this.animationFrameId = requestAnimationFrame(this.gameLoop.bind(this));
     }
 
     private update(): void {
-        // Update game state (handle input, move characters, check collisions)
-        // Placeholder for now
+        this.pacman.update();
     }
 
     private render(): void {
-        // Clear the canvas
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Draw game elements (maze, Pac-Man, ghosts, dots, score)
-        // Placeholder for now - draw a black background
-        this.ctx.fillStyle = 'black';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Example: Draw a simple shape to verify rendering
-        this.ctx.fillStyle = 'yellow';
-        this.ctx.fillRect(100, 100, 50, 50);
+        this.renderer.clear();
+        this.renderer.drawMaze(this.maze);
+        this.renderer.drawPacMan(this.pacman);
+        // Draw grid overlay for debugging
+        this.renderer.drawGrid();
     }
 }
 

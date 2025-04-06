@@ -45,20 +45,33 @@ class Maze {
         [0,2,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,2,0],
         [0,2,0,0,0,0,0,0,0,0,0,0,2,0,0,2,0,0,0,0,0,0,0,0,0,0,2,0],
         [0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
         [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     ];
 
-    // Adding extra rows for UI elements (score, lives) - typically 3 rows above, 2 below map = 36 total rows
+    // Adding exact UI layout matching original game:
+    // - 3 rows for score section at top
+    // - 31 rows for maze
+    // - 2 rows for footer (lives and power ups)
     private uiLayout = [
+        // 3 rows for score section
         [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
         [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
         [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
+        // 2 rows for footer section
         [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7],
         [7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7]
     ];
 
     constructor() {
-        const fullLayout = [...this.uiLayout.slice(0, 3), ...this.layout, ...this.uiLayout.slice(3)];
+        // Add the 3 UI rows at top, then maze (31 rows), then 2 UI rows at bottom
+        const fullLayout = [
+            ...this.uiLayout.slice(0, 3),  // Top 3 rows for score
+            ...this.layout,                 // 31 rows for maze
+            ...this.uiLayout.slice(3)       // Bottom 2 rows for footer
+        ];
 
         this.rows = fullLayout.length;
         this.cols = fullLayout[0].length;

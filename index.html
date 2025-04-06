@@ -16,7 +16,15 @@
         background-color: #000; /* Black background */
       }
       canvas {
-        border: 1px solid white; /* Visible border for dev */
+        border: 1px solid #1919A6;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        /* Display size based on internal resolution and scaling */
+        /* Internal: 28 cols * 8px = 224px wide */
+        /* Internal: 36 rows * 8px = 288px high */
+        /* Displayed at 2x size for clarity */
+        width: 448px;  /* 224px * 2 */
+        height: 576px; /* 288px * 2 */
       }
     </style>
   </head>

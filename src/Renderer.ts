@@ -12,6 +12,7 @@ class Renderer {
     private cols: number;
     // private spritesheet: HTMLImageElement; // Remove
     private maze!: Maze;
+    private _loggedRows: boolean = false; // Debug flag
 
     // Remove spritesheet parameter
     constructor(ctx: CanvasRenderingContext2D, maze: Maze) {
@@ -38,51 +39,28 @@ class Renderer {
         return tile !== TileType.Empty && tile !== TileType.GhostHouse;
     }
 
-    // Revert drawMaze to use basic shapes
+    // Draw a checkerboard pattern for grid visualization
     public drawMaze(maze: Maze): void {
-        this.maze = maze;
-        const wallColor = '#1919A6';
-        const dotColor = '#FFB8AE';
-        const pelletColor = '#FFB8AE';
-        const gateColor = '#FFB8FF';
-        const wallThickness = 1; // Use 1 pixel for wall thickness
+        this.maze = maze; // Keep maze reference if needed later
+        const color1 = '#111'; // Dark grey
+        const color2 = '#333'; // Lighter grey
+
+        this.clear(); // Start with a black background
+
+        // Debug: Log the number of rows being rendered
+        if (!this._loggedRows) { // Only log once
+            console.log(`Renderer drawing with this.rows = ${this.rows}`);
+            this._loggedRows = true;
+        }
 
         for (let r = 0; r < this.rows; r++) {
             for (let c = 0; c < this.cols; c++) {
                 const x = c * this.tileSize;
                 const y = r * this.tileSize;
-                const centerX = x + this.tileSize / 2;
-                const centerY = y + this.tileSize / 2;
-                const currentTile = this.maze.grid[r][c];
 
-                // 1. Draw Dots, Power Pellets, Ghost Gate
-                if (currentTile === TileType.Dot) {
-                    this.ctx.fillStyle = dotColor;
-                    this.ctx.fillRect(centerX - 1, centerY - 1, 2, 2);
-                } else if (currentTile === TileType.PowerPellet) {
-                    this.ctx.fillStyle = pelletColor;
-                    this.ctx.beginPath();
-                    this.ctx.arc(centerX, centerY, this.tileSize * 0.4, 0, Math.PI * 2);
-                    this.ctx.fill();
-                } else if (currentTile === TileType.GhostGate) {
-                    this.ctx.fillStyle = gateColor;
-                    this.ctx.fillRect(x, centerY - 1, this.tileSize, 2);
-                }
-
-                // 2. Draw Wall Boundaries (1px thick, inside non-walkable tile)
-                if (!this.isWalkable(r, c)) {
-                    const walkableAbove = this.isWalkable(r - 1, c);
-                    const walkableBelow = this.isWalkable(r + 1, c);
-                    const walkableLeft = this.isWalkable(r, c - 1);
-                    const walkableRight = this.isWalkable(r, c + 1);
-
-                    this.ctx.fillStyle = wallColor;
-
-                    if (walkableAbove) { this.ctx.fillRect(x, y, this.tileSize, wallThickness); }
-                    if (walkableBelow) { this.ctx.fillRect(x, y + this.tileSize - wallThickness, this.tileSize, wallThickness); }
-                    if (walkableLeft) { this.ctx.fillRect(x, y, wallThickness, this.tileSize); }
-                    if (walkableRight) { this.ctx.fillRect(x + this.tileSize - wallThickness, y, wallThickness, this.tileSize); }
-                }
+                // Alternate color based on row + col index
+                this.ctx.fillStyle = (r + c) % 2 === 0 ? color1 : color2;
+                this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
             }
         }
     }
@@ -95,21 +73,28 @@ class Renderer {
         this.ctx.fill();
     }
 
-    // Method to draw the debug grid overlay
+    // Method to draw the debug grid overlay only within the maze area
     public drawGrid(): void {
         this.ctx.strokeStyle = 'rgba(100, 100, 100, 0.5)'; // Semi-transparent grey
         this.ctx.lineWidth = 0.5;
         this.ctx.beginPath();
 
-        // Draw vertical lines
+        const uiTopRows = 3;
+        const uiBottomRows = 2;
+        const mazeStartRow = uiTopRows;
+        const mazeEndRow = this.rows - uiBottomRows;
+        const mazeStartY = mazeStartRow * this.tileSize;
+        const mazeHeight = (mazeEndRow - mazeStartRow) * this.tileSize;
+
+        // Draw vertical lines (span full height for alignment)
         for (let c = 0; c <= this.cols; c++) {
             const x = c * this.tileSize;
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.rows * this.tileSize);
+            this.ctx.moveTo(x, mazeStartY);
+            this.ctx.lineTo(x, mazeStartY + mazeHeight);
         }
 
-        // Draw horizontal lines
-        for (let r = 0; r <= this.rows; r++) {
+        // Draw horizontal lines only within the maze area
+        for (let r = mazeStartRow; r <= mazeEndRow; r++) {
             const y = r * this.tileSize;
             this.ctx.moveTo(0, y);
             this.ctx.lineTo(this.cols * this.tileSize, y);

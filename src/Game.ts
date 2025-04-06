@@ -11,7 +11,8 @@ class Game {
     private animationFrameId: number | null = null; // To control the game loop
 
     // Pac-Man's starting position in the maze grid (adjust if needed)
-    private readonly pacmanStartRow = 23;
+    // Original layout row index 23. With 3 UI rows added at the top, the correct index is 26.
+    private readonly pacmanStartRow = 26;
     private readonly pacmanStartCol = 13.5; // Centered horizontally
 
     constructor(canvasId: string) {
@@ -23,9 +24,12 @@ class Game {
 
         this.maze = new Maze(); // Create a new Maze instance
 
-        // Set canvas dimensions based on maze size
+        // Set canvas dimensions based on maze size and internal resolution
         this.canvas.width = this.maze.cols * this.maze.tileSize;
         this.canvas.height = this.maze.rows * this.maze.tileSize;
+        
+        // Scale up the context for crisp pixels
+        this.ctx.imageSmoothingEnabled = false;
 
         // Create PacMan instance
         this.pacman = new PacMan(this.maze, this.pacmanStartRow, this.pacmanStartCol);
@@ -61,11 +65,11 @@ class Game {
     }
 
     private render(): void {
-        this.renderer.clear();
         this.renderer.drawMaze(this.maze);
-        this.renderer.drawPacMan(this.pacman);
-        // Draw grid overlay for debugging
-        this.renderer.drawGrid();
+        // Don't draw PacMan for now, just the grid
+        // this.renderer.drawPacMan(this.pacman);
+        // Remove grid overlay call
+        // this.renderer.drawGrid();
     }
 }
 

@@ -31,42 +31,85 @@ class Renderer {
         this.ctx.fillRect(0, 0, this.cols * this.tileSize, this.rows * this.tileSize);
     }
 
+    // Re-enable isWalkable method
     private isWalkable(r: number, c: number): boolean {
         if (r < 0 || r >= this.rows || c < 0 || c >= this.cols) {
             return false;
         }
-        const tile = this.maze.grid[r][c];
-        return tile !== TileType.Empty && tile !== TileType.GhostHouse;
+        // Check the actual grid data from Maze instance
+        const tile = this.maze.grid[r]?.[c]; // Use optional chaining for safety
+        // Consider Path, Dot, PowerPellet, and Tunnel entrance/exit as walkable
+        return tile === TileType.Path || tile === TileType.Dot || tile === TileType.PowerPellet;
+        // GhostGate is not typically walkable by PacMan
+        // GhostHouse and Empty are not walkable
     }
 
-    // Draw colored rectangles for UI and Maze areas
+    // Draw the actual maze elements based on TileType
     public drawMaze(maze: Maze): void {
-        this.maze = maze; // Keep maze reference if needed later
-        const headerFooterColor = '#CCCCCC'; // Light grey
-        const mazeAreaColor = '#008000';    // Green
+        this.maze = maze; // Update internal reference
+        const wallColor = '#1919A6'; // Blue for walls
+        const dotColor = '#FFB8AE'; // Standard dot color
+        const pelletColor = '#FFB8AE'; // Power pellet color (same for now)
+        const gateColor = '#FFB8FF'; // Ghost gate color
+        const wallThickness = 1; // Pixel thickness for walls
+        const backgroundColor = '#000000'; // Black background for empty/path areas
 
-        this.clear(); // Start with a black background
+        this.clear(); // Clear canvas first
 
         const uiTopRows = 3;
         const uiBottomRows = 2;
         const mazeStartRow = uiTopRows;
-        const mazeEndRow = this.rows - uiBottomRows; // Exclusive index
+        const mazeEndRow = this.rows - uiBottomRows;
 
         for (let r = 0; r < this.rows; r++) {
             for (let c = 0; c < this.cols; c++) {
                 const x = c * this.tileSize;
                 const y = r * this.tileSize;
+                const centerX = x + this.tileSize / 2;
+                const centerY = y + this.tileSize / 2;
+                const currentTile = this.maze.grid[r]?.[c]; // Use optional chaining
 
-                // Determine fill color based on row
+                // Fill background first (black for maze area, grey for UI)
                 if (r < mazeStartRow || r >= mazeEndRow) {
-                    // Header or Footer
-                    this.ctx.fillStyle = headerFooterColor;
+                    this.ctx.fillStyle = '#CCCCCC'; // Light grey for UI
                 } else {
-                    // Maze Area
-                    this.ctx.fillStyle = mazeAreaColor;
+                    this.ctx.fillStyle = backgroundColor; // Black for maze background
                 }
-
                 this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
+
+                // Now draw maze elements only within the maze rows
+                if (r >= mazeStartRow && r < mazeEndRow && currentTile !== undefined) {
+                    // 1. Draw Dots, Power Pellets, Ghost Gate
+                    if (currentTile === TileType.Dot) {
+                        this.ctx.fillStyle = dotColor;
+                        this.ctx.fillRect(centerX - 1, centerY - 1, 2, 2); // Small square dot
+                    } else if (currentTile === TileType.PowerPellet) {
+                        this.ctx.fillStyle = pelletColor;
+                        this.ctx.beginPath();
+                        this.ctx.arc(centerX, centerY, this.tileSize * 0.4, 0, Math.PI * 2); // Larger circle pellet
+                        this.ctx.fill();
+                    } else if (currentTile === TileType.GhostGate) {
+                        this.ctx.fillStyle = gateColor;
+                        this.ctx.fillRect(x, centerY - 1, this.tileSize, 2); // Horizontal line for gate
+                    }
+
+                    // 2. Draw Wall Boundaries for Empty/GhostHouse tiles
+                    if (currentTile === TileType.Empty || currentTile === TileType.GhostHouse) {
+                        // Check neighbors *within the full grid* to decide which boundary lines to draw
+                        const walkableAbove = this.isWalkable(r - 1, c);
+                        const walkableBelow = this.isWalkable(r + 1, c);
+                        const walkableLeft = this.isWalkable(r, c - 1);
+                        const walkableRight = this.isWalkable(r, c + 1);
+
+                        this.ctx.fillStyle = wallColor;
+
+                        // Draw lines on the *inside edge* of the non-walkable tile
+                        if (walkableAbove) { this.ctx.fillRect(x, y, this.tileSize, wallThickness); }
+                        if (walkableBelow) { this.ctx.fillRect(x, y + this.tileSize - wallThickness, this.tileSize, wallThickness); }
+                        if (walkableLeft) { this.ctx.fillRect(x, y, wallThickness, this.tileSize); }
+                        if (walkableRight) { this.ctx.fillRect(x + this.tileSize - wallThickness, y, wallThickness, this.tileSize); }
+                    }
+                }
             }
         }
     }

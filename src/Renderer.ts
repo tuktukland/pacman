@@ -12,7 +12,7 @@ class Renderer {
     private cols: number;
     // private spritesheet: HTMLImageElement; // Remove
     private maze!: Maze;
-    private _loggedRows: boolean = false; // Debug flag
+    // private _loggedRows: boolean = false; // Remove Debug flag
 
     // Remove spritesheet parameter
     constructor(ctx: CanvasRenderingContext2D, maze: Maze) {
@@ -39,27 +39,33 @@ class Renderer {
         return tile !== TileType.Empty && tile !== TileType.GhostHouse;
     }
 
-    // Draw a checkerboard pattern for grid visualization
+    // Draw colored rectangles for UI and Maze areas
     public drawMaze(maze: Maze): void {
         this.maze = maze; // Keep maze reference if needed later
-        const color1 = '#111'; // Dark grey
-        const color2 = '#333'; // Lighter grey
+        const headerFooterColor = '#CCCCCC'; // Light grey
+        const mazeAreaColor = '#008000';    // Green
 
         this.clear(); // Start with a black background
 
-        // Debug: Log the number of rows being rendered
-        if (!this._loggedRows) { // Only log once
-            console.log(`Renderer drawing with this.rows = ${this.rows}`);
-            this._loggedRows = true;
-        }
+        const uiTopRows = 3;
+        const uiBottomRows = 2;
+        const mazeStartRow = uiTopRows;
+        const mazeEndRow = this.rows - uiBottomRows; // Exclusive index
 
         for (let r = 0; r < this.rows; r++) {
             for (let c = 0; c < this.cols; c++) {
                 const x = c * this.tileSize;
                 const y = r * this.tileSize;
 
-                // Alternate color based on row + col index
-                this.ctx.fillStyle = (r + c) % 2 === 0 ? color1 : color2;
+                // Determine fill color based on row
+                if (r < mazeStartRow || r >= mazeEndRow) {
+                    // Header or Footer
+                    this.ctx.fillStyle = headerFooterColor;
+                } else {
+                    // Maze Area
+                    this.ctx.fillStyle = mazeAreaColor;
+                }
+
                 this.ctx.fillRect(x, y, this.tileSize, this.tileSize);
             }
         }

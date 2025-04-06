@@ -2,6 +2,8 @@
 
 A modern implementation of the classic Pacman game.
 
+## Public GitHub Repo: https://github.com/tuktukland/pacman
+
 ## Development
 
 To run the project in development mode:

@@ -51,7 +51,6 @@ class Renderer {
         const dotColor = '#FFB8AE'; // Standard dot color
         const pelletColor = '#FFB8AE'; // Power pellet color (same for now)
         const gateColor = '#FFB8FF'; // Ghost gate color
-        const wallThickness = 1; // Pixel thickness for walls
         const backgroundColor = '#000000'; // Black background for empty/path areas
 
         this.clear(); // Clear canvas first
@@ -61,6 +60,7 @@ class Renderer {
         const mazeStartRow = uiTopRows;
         const mazeEndRow = this.rows - uiBottomRows;
 
+        // --- First Pass: Draw backgrounds, dots, pellets, gate ---
         for (let r = 0; r < this.rows; r++) {
             for (let c = 0; c < this.cols; c++) {
                 const x = c * this.tileSize;
@@ -92,26 +92,50 @@ class Renderer {
                         this.ctx.fillStyle = gateColor;
                         this.ctx.fillRect(x, centerY - 1, this.tileSize, 2); // Horizontal line for gate
                     }
-
-                    // 2. Draw Wall Boundaries for Empty/GhostHouse tiles
-                    if (currentTile === TileType.Empty || currentTile === TileType.GhostHouse) {
-                        // Check neighbors *within the full grid* to decide which boundary lines to draw
-                        const walkableAbove = this.isWalkable(r - 1, c);
-                        const walkableBelow = this.isWalkable(r + 1, c);
-                        const walkableLeft = this.isWalkable(r, c - 1);
-                        const walkableRight = this.isWalkable(r, c + 1);
-
-                        this.ctx.fillStyle = wallColor;
-
-                        // Draw lines on the *inside edge* of the non-walkable tile
-                        if (walkableAbove) { this.ctx.fillRect(x, y, this.tileSize, wallThickness); }
-                        if (walkableBelow) { this.ctx.fillRect(x, y + this.tileSize - wallThickness, this.tileSize, wallThickness); }
-                        if (walkableLeft) { this.ctx.fillRect(x, y, wallThickness, this.tileSize); }
-                        if (walkableRight) { this.ctx.fillRect(x + this.tileSize - wallThickness, y, wallThickness, this.tileSize); }
-                    }
                 }
             }
         }
+
+        // --- Second Pass: Draw Walls ---
+        const wallLineWidth = 1; // Use full tileSize for thickness
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = wallColor;
+        this.ctx.lineWidth = wallLineWidth;
+        this.ctx.lineCap = 'round'; // Use round caps for smooth corners
+
+        // Helper to check if a tile is a wall type (avoids code duplication)
+        const isWall = (row: number, col: number): boolean => {
+            // Check within full grid bounds, but rendering only considers maze area
+            if (row < 0 || row >= this.rows || col < 0 || col >= this.cols) {
+                return false; // Treat out-of-bounds as not a wall for drawing purposes
+            }
+            const tile = this.maze.grid[row]?.[col];
+            return tile === TileType.Empty || tile === TileType.GhostHouse;
+        };
+
+        // Iterate through maze tiles to draw connections between wall centers
+        for (let r = mazeStartRow; r < mazeEndRow; r++) {
+            for (let c = 0; c < this.cols; c++) {
+                if (!isWall(r, c)) continue; // Skip non-wall tiles
+
+                const centerX = c * this.tileSize + this.tileSize / 2;
+                const centerY = r * this.tileSize + this.tileSize / 2;
+
+                // Check RIGHT neighbor within maze bounds
+                if (c + 1 < this.cols && isWall(r, c + 1)) {
+                    this.ctx.moveTo(centerX, centerY);
+                    this.ctx.lineTo(centerX + this.tileSize, centerY);
+                }
+
+                // Check BOTTOM neighbor within maze bounds
+                // Need to check r + 1 against mazeEndRow
+                if (r + 1 < mazeEndRow && isWall(r + 1, c)) {
+                    this.ctx.moveTo(centerX, centerY);
+                    this.ctx.lineTo(centerX, centerY + this.tileSize);
+                }
+            }
+        }
+        this.ctx.stroke(); // Draw all the collected wall segments
     }
 
     // Draw Pac-Man as a simple yellow circle
